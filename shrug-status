@@ -1,0 +1,108 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# subset 1-3, shrug-status
+# shrug-status shows the status of files in the current directory, the index,
+# and the repository.
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+# no need to check invalid command usage
+
+index=".shrug/index"
+stage=".shrug/stage"
+repository=".shrug/repository"
+bin=".shrug/bin"
+state=".shrug/state"
+
+# not yet added or committed
+if [ ! -d "$index" ] || [ ! -d "$repository" ]
+then
+    echo "$0: error: your repository does not have any commits yet"
+    exit 1
+fi
+
+if [ ! -d "$state" ]
+then
+    mkdir "$state"
+fi
+
+# copy all files in current directory to .shrug/state
+for file in *
+do
+    if [ -f "$file" ]
+    then
+        cp "$file" "$state/$file"
+    fi
+done
+
+#sorted=`ls "$state"|sort -V`
+#`ls | sort -V >/dev/null`
+
+for file in `ls | sort -V`
+# while :
+do
+    # files in directory which are not added
+    if [ ! -f "$index/$file" ]
+    then
+        echo "$file - untracked"
+        continue
+    fi
+
+    # files added to index, but not commited
+    if [ -f "$index/$file" ] && [ ! -d "$repository/$file" ]
+    then
+        echo "$file - added to index"
+        continue
+    fi
+
+    # check if file commited before (in repository)
+    if [ -d "$repository/$file" ]
+    then
+        latest=`ls "$repository/$file" | sort | tail -n 1`
+        diffFile=`cmp -s "$file" "$repository/$file/$latest"`
+        diffIndex=`cmp -s "$file" "$index/$file"`
+        diffRepo=`cmp -s "$index/$file" "$repository/$file/$latest"`
+    fi
+
+    # files committed, and not changed
+    if [ -f "$index/$file" ]
+    then
+        # file in repository is up to date
+        if [ ! "$diffFile" ]
+        then
+            echo "$file - same as repo"
+            continue
+        fi
+    fi
+    
+    # files commited before, new changes in directory and not added
+    if [ -d "$repository/$file" ] && [ "$diffIndex" ] && [ ! "$diffRepo" ]
+    then
+        echo "$file - file changed, changes not staged for commit"
+        continue
+    fi
+
+    # files commited before, new changes in directory is added
+    if [ -d "$repository/$file" ] && [ ! "$diffIndex" ] && [ ! "$diffRepo" ]
+    then
+        echo "$file - file changed, changes staged for commit"
+        continue
+    fi
+
+
+    if [ -f "$bin/$file" ]
+    then
+        # files committed but being delected from the directory
+        echo "$file - file deleted"
+        continue
+    fi
+
+done
+
+rm -rf "$state"

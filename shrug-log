@@ -1,0 +1,23 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# subset0-4, shrug-log
+# The shrug-log command prints a line for every commit made to the repository:
+# each line should contain the commit number, and the commit message.
+# history of commit
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+# check invalid command usage
+if [ $# != 0 ]
+then
+    echo "usage: $0"
+    exit 1
+fi
+
+tac ".shrug/repository/log.txt"

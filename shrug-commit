@@ -1,0 +1,114 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# subset0-3, shrug-commit -m message
+# saves a copy of all files in the index to the repository.
+# A message describing the commit must be included as part of the commit command
+# Shrug commits are numbered sequentially: they are not hashes, like Git. You
+# must match the numbering scheme.
+# You can assume the commit message is ASCII, does not contain new-line
+# characters, and does not start with a '-' character.
+
+# subset1-1, shrug-commit [-a] -m message
+# shrug-commit can have a -a option, which causes all files already in the index
+# to have their contents from the current directory added to the index before the commit.
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+# check invalid command usage
+if [ $# -lt 2 ] || `[ "$1" != "-a" ] && [ "$1" != "-m" ]` || `[ "$1" = "-a" ] && [ "$2" != "-m" ]`
+then
+    echo "usage: $0 [-a] -m commit-message"
+    exit 1
+fi
+
+repository=".shrug/repository"
+# create repository & log.txt
+if [ ! -d "$repository" ]
+then
+    mkdir "$repository"
+    touch "$repository/log.txt"
+fi
+
+index=".shrug/index"
+stage=".shrug/stage"
+
+# commit message
+message=$2
+
+
+# shrug-commit [-a] -m message
+if [ "$1" = "-a" ]
+then
+    message=$3
+
+    # add all files in index
+    for new in *
+    do
+        if [ -f "$index/$new" ]
+        then
+            shrug-add "$new"
+        fi
+    done
+fi
+
+same=0
+updated=0
+# number of files in stage
+added=`ls -1 $stage | wc -l`
+# commit counter
+commit=`wc -l "$repository/log.txt" | cut -d' ' -f1`
+
+# shrug-commit -m message
+if [ $added = 0 ]
+then
+    # no files in stage
+    echo "nothing to commit"
+    exit 1
+else
+    for file in `ls $index/ | cat`
+    do
+        # check if file commited before (in repository)
+        if [ -d "$repository/$file" ]
+        then
+            latest=`ls "$repository/$file" | sort | tail -n 1`
+            if [ "$updated" != "$added" ]
+            then
+                equal=`cmp -s "$stage/$file" "$repository/$file/$latest"`
+                if [ "$equal" ] && [ "$equal" = "" ]
+                then
+                    same=$((same+1))
+                fi
+                # all files are not modified
+                if [ "$same" -eq "$added" ] && [ -f "$stage/$file" ]
+                then
+                    rm "$stage/$file"
+                    echo "nothing to commit"
+                    exit 1
+                fi
+            fi
+
+        fi
+
+        # create a directory for file in repository
+        if [ ! -d "$repository/$file" ]
+        then
+            mkdir "$repository/$file"
+        fi
+
+        touch "$repository/$file/$commit-$file"
+        cp "$index/$file" "$repository/$file/$commit-$file"
+        updated=$((updated+1))
+        if [ -f "$stage/$file" ]
+        then
+            rm "$stage/$file"
+        fi
+    done
+    echo "$commit $message" >> "$repository/log.txt"
+    echo "Committed as commit $commit"
+fi

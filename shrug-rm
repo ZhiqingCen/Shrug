@@ -1,0 +1,133 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# subset1-2, shrug-rm [--force] [--cached] filenames...
+# shrug-rm removes a file from the index, or from current directory and index
+#
+# If the --cached option is specified, the file is removed only from the index,
+# and not from the current directory.
+#
+# shrug-rm, like git rm, should stop the user accidentally losing work, and
+# should give an error message instead if the removal would cause the user to
+# lose work. You will need to experiment with the reference implementation to
+# discover these error messages. Researching git rm's behaviour may also help.
+#
+# The --force option overrides this, and will carry out the removal even if
+# the user will lose work.
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+# check if .shrug/repository exist
+if [ ! -d ".shrug/repository" ]
+then
+    echo "$0: error: your repository does not have any commits yet"
+    exit 1
+fi
+
+# check command usage
+if [ ! $1 ]
+then
+    echo "usage: $0 [--force] [--cached] <filenames>"
+    exit 1
+fi
+
+force=0
+if [ $1 = "--force" ]
+then
+    force=1
+fi
+
+cached=0
+if [ $1 = "--cached" ]
+then
+    cached=1
+fi
+
+# check command usage
+if [ $# = 2 ] && [ $force = 0 ]
+then
+    if [ $cached = 0 ]
+    then
+        echo "usage: $0 [--force] [--cached] <filenames>"
+        exit 1
+    fi
+fi
+
+index=".shrug/index"
+stage=".shrug/stage"
+repository=".shrug/repository"
+bin=".shrug/bin"
+
+if [ ! -d "$bin" ]
+then
+    mkdir "$bin"
+fi
+
+for file in "$@"
+do
+    #ignore '--force' && '--cached'
+    if [ "$file" = "--force" ] || [ "$file" = "--cached" ] || [ "$force" != 0 ] || [ ! -f "$file" ]
+    then
+        continue
+    fi
+
+    # check if file repository exist
+    if [ ! -f "$index/$file" ]
+    then
+        echo "$0: error: '$file' is not in the shrug repository"
+        exit 1
+    fi
+
+    if [ -d "$repository/$file" ]
+    then
+        latest=`ls "$repository/$file" | sort | tail -n 1`
+    fi
+
+    diffIndex=`cmp -s "$file" "$index/$file"`
+    diffRepo=`cmp -s "$index/$file" "$repository/$file/$latest"`
+
+    if [ -d "$repository/$file" ] && [ "$diffIndex" != "" ] && [ "$diffRepo" != "" ]
+    then
+        echo "$0: error: '$file' in index is different to both working file and repository"
+        exit 1
+    fi
+
+    if [ "$cached " = 0 ]
+    then
+        if [ -d "$repository/$file" ] && [ "$diffIndex" != "" ]
+        then
+            echo "$0: error: '$file' in repository is different to working file"
+            exit 1
+        elif [ -f "$stage/$file" ] || [ -f "$bin/$file" ]
+        then
+            echo "$0: error: '$file' has changes staged in the index"
+            exit 1
+        fi
+    fi
+done
+
+for file in "$@"
+do
+    #ignore '--force' && '--cached'
+    if [ "$file" = "--force" ] || [ "$file" = "--cached" ]
+    then
+        continue
+    fi
+    touch "$bin/$file"
+    mv "$index/$file" "$bin/$file"
+    rm -rf "$stage/$file"
+
+    if [ $force = 1 ] || [ $cached = 0 ]
+    then
+        rm -rf "$file"
+        if [ ! -d "$repository/$file" ]
+        then
+            rm -rf "$bin/$file"
+        fi
+    fi
+done

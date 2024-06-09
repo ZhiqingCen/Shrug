@@ -1,0 +1,39 @@
+Date        |Start  |Stop   |Activity       |Comments
+30.06.2020  |12:00  |12:40  |reading        |
+04.07.2020  |20:00  |22:00  |reading+coding | subset0 - shrug-init
+06.07.2020  |20:27  |21:00  |coding+debuging| subset0 - shrug-add
+07.07.2020  |15:07  |18:00  |coding+debuging| subset0 - shrug-add
+07.07.2020  |21:00  |23:40  |coding+debuging| subset0 - shrug-commit
+08.07.2020  |12:00  |15:30  |coding+debuging| subset0 - shrug-commit
+09.07.2020  |11:00  |13.20  |coding+debuging| subset0 - shrug-log
+09.07.2020  |14:40  |15:20  |coding+debuging| subset0 - shrug-commit
+10.07.2020  |12:30  |15:00  |coding+debuging| subset0 - shrug-show
+14.07.2020  |14:00  |16:00  |coding+debuging| subset1
+14.07.2020  |15:00  |24:15  |coding+debuging| subset1 & test files
+
+Subset0
+> shrug-init
+> shrug-add filenames...
+> shrug-commit -m message
+> shrug-log
+> shrug-show [commit]:filename
+
+Subset1
+> shrug-commit [-a] -m message
+> shrug-rm [--force] [--cached] filenames...
+> shrug-status
+
+Subset2
+> shrug-branch [-d] [branch-name]
+> shrug-checkout branch-name
+> shrug-merge branch-name|commit -m message
+
+->  autotest
+2041 autotest shrug subset0 shrug-*
+2041 autotest shrug subset1 shrug-*
+2041 autotest shrug subset0_8 shrug-*
+2041 autotest shrug subset1_17 shrug-*
+2041 autotest shrug shrug-*
+
+->  give
+give cs2041 ass1_shrug shrug-* diary.txt test??.sh

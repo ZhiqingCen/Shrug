@@ -1,0 +1,90 @@
+#!/bin/dash
+
+# subset0-5, shrug-show [commit]:filename
+# print the contents of the specified filename as of the specified commit.
+# If commit is omitted, the contents of the file in the index should be printed.
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+# check invalid command usage
+if [ ! "$1" ]
+then
+    echo "usage: $0 <commit>:<file>"
+    exit 1
+fi
+
+# check invalid file/input
+if [ "$1" = "[0-9]*:[0-9a-zA-z]*" ]
+then
+    echo "$0: error: invalid object $1"
+    exit 1
+fi
+
+index=".shrug/index"
+stage=".shrug/stage"
+repository=".shrug/repository"
+commit=`echo $1 | cut -d':' -f1`
+file=`echo $1 | cut -d':' -f2`
+
+# file added but not commited, print index version
+if [ ! -d "$repository/$file" ] && [ -f "$index/$file" ]
+then
+    cat "$index/$file"
+    exit 1
+fi
+
+
+max=`wc -l "$repository/log.txt" | cut -d' ' -f1`
+
+# file not added before
+if [ "$commit" = "" ] && [ ! -f "$index/$file" ]
+then
+    echo "$0: error: '$file' not found in index"
+    exit 1
+
+# file commited, but not found in given commit number
+elif [ "$commit" != "" ] && [ "$commit" -lt "$max" ] && [ ! -f "$repository/$file/$commit-$file" ]
+then
+    echo "$0: error: '$file' not found in commit $commit "
+    exit 1
+
+# file commited, but commit number given is invalid
+elif [ "$commit" != "" ] && [ "$commit" -gt "$max" ]
+then
+    echo "$0: error: unknown commit '$commit'"
+    exit 1
+fi
+
+# commit number not given, print latest version in index/repository
+if [ "$commit" = "" ]
+then
+
+    latest=`ls "$repository/$file" | sort | tail -n 1`
+    # check if file commited before (in repository)
+    if [ -f "$index/$file" ]
+    then
+        # file in index is the latest version
+        if [ ! `cmp -s "$index/$file" "$repository/$file/$latest"` ]
+        then
+            cat "$index/$file"
+            exit 1
+
+        # file in index is the same as repository
+        else
+            cat "$repository/$file/$latest"
+            exit 1
+        fi
+    else
+        # file not in index
+        cat "$repository/$file/$latest"
+        exit 1
+    fi
+
+fi
+
+cat "$repository/$file/$commit-$file"

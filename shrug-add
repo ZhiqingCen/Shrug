@@ -1,0 +1,71 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# subset0-2, shrug-add filenames
+# The shrug-add command adds the contents of one or more files to the index.
+# Files are added to the repository in a two step process.
+# ->    The first step is adding them to the index. You will need to store
+#       files in the index somehow in the .shrug sub-directory. For example,
+#       you might choose store them in a sub-directory of .shrug.
+
+# Only ordinary files in the current directory can be added.
+# Filenames will always start with an alphanumeric character ([a-zA-Z0-9]) and
+# will only contain alpha-numeric characters, plus '.', '-' and '_' characters.
+# The shrug-add command, and other Shrug commands, will not be given indexnames
+# with slashes.
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+# check invalid command usage
+if [ ! $1 ]
+then
+    echo "usage: $0 <filenames>"
+fi
+
+index=".shrug/index"
+stage=".shrug/stage"
+
+# create index
+if [ ! -d "$index" ]
+then
+    mkdir "$index"
+fi
+
+# create staging area
+if [ ! -d "$stage" ]
+then
+    mkdir "$stage"
+fi
+
+# can add multiple files in one command
+for file in "$@"
+do
+    # file does not exist
+    if [ ! -f $file ]
+    then
+        echo "$0: error: can not open '$file'"
+        exit 1
+    fi
+
+    # create new file in index
+    if [ ! -f "$index/$file" ]
+    then
+        touch "$index/$file"
+    fi
+    # update index
+    cp "$file" "$index/$file"
+
+
+    if [ ! -f "$stage/$file" ]
+    then
+        touch "$stage/$file"
+    fi
+    # add file in stage
+    cp "$file" "$stage/$file"
+
+done

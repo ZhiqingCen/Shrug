@@ -1,0 +1,11 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# check if .shrug exist
+if [ ! -d ".shrug" ]
+then
+    echo "$0: error: no .shrug directory containing shrug repository exists"
+    exit 1
+fi
+
+echo "master"

@@ -1,0 +1,30 @@
+#!/usr.bin.env dash
+#!/bin/dash
+
+# creates an empty Shrug repository.
+# and create a directory named .shrug, which it will use to store the repository
+# It should produce an error message if this directory already exists.
+
+# check invalid command usage
+if [ $# != 0 ]
+then
+    echo "usage: $0"
+    exit 1
+fi
+
+name=".shrug"
+
+# check if '.shrug' exist
+for file in * .[^.]*
+do
+    # check both directory and file names
+    if [ -d "$name" ] || [ -f "$name" ]
+    then
+        echo "$0: error: $name already exists"
+        exit 1
+    fi
+done
+
+# create an empty Shrug repository
+mkdir $name
+echo "Initialized empty shrug repository in $name"
